@@ -1,0 +1,12 @@
+name: Dump Environment Variables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dump-env:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dump environment variables
+        run: env | sort
