@@ -1,0 +1,89 @@
+#
+# tag-feature.yml
+# This workflow is triggered when a push is made to a feature branch.
+#
+name: tag-feature.yml
+on:
+  push:
+    branches:
+      - feature/LREG-*
+
+permissions:
+  contents: write
+
+jobs:
+  tag-feature:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Get branch name
+        id: story
+        run: |
+          shopt -s nocasematch
+          BRN_NAME="${{ github.ref_name }}"
+
+          if [[ $BRN_NAME =~ feature/([a-z]+-[0-9]+)-.* ]]; then
+            STORY_ID="${BASH_REMATCH[1]}"
+            echo "STORY_ID=${STORY_ID}" >> "$GITHUB_OUTPUT"
+            echo "STORY_ID found ${STORY_ID}"
+          else
+            echo "Branch does not have the correct name!" >&2
+            exit 1
+          fi
+
+      - name: Calculate next tag
+        id: version
+        env:
+          STORY_ID: ${{ steps.story.outputs.STORY_ID }}
+        run: |
+          git fetch --force --tags
+
+          latest_main_tag=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+          latest_feature_tag=$(git tag --sort=-v:refname | grep -E "^v?[0-9]+\.[0-9]+\.[0-9]+-beta\.${STORY_ID}\.[0-9]+$" | head -n1)
+
+          if [ -z "$latest_main_tag" ]; then
+            major=0
+            minor=0
+            patch=0
+          else
+            version="${latest_main_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+          fi
+
+          case "$BUMP" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            *)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          beta_counter=$(git rev-list --count HEAD)
+          next_tag="${major}.${minor}.${patch}-${STORY_ID}-alpha.${beta_counter}"
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            exit 1
+          fi
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          echo "Adding Tag $TAG"
+#          git tag -a "$TAG" -m "Feature build $TAG"
+#          git push origin "$TAG"
