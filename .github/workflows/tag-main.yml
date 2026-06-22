@@ -1,0 +1,91 @@
+#
+# tag-main.yml
+# This workflow is triggered when PR is merged to main.
+#
+name: tag-main.yml
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+jobs:
+  tag-repo:
+    if: github.event.pull_request.merged == true
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine bump type
+        id: bump
+        env:
+          LABELS_JSON: ${{ toJson(github.event.pull_request.labels) }}
+        run: |
+          labels=$(echo "$LABELS_JSON" | jq -r '.[].name')
+          bump=patch
+
+          if echo "$labels" | grep -qx 'semver:major'; then
+            bump=major
+          elif echo "$labels" | grep -qx 'semver:minor'; then
+            bump=minor
+          elif echo "$labels" | grep -qx 'semver:patch'; then
+            bump=patch
+          fi
+
+          echo "value=$bump" >> "$GITHUB_OUTPUT"
+
+      - name: Calculate next tag
+        id: version
+        env:
+          BUMP: ${{ steps.bump.outputs.value }}
+        run: |
+          git fetch --force --tags
+
+          latest_tag=$(git tag --merged main --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+
+          if [ -z "$latest_tag" ]; then
+            major=0
+            minor=0
+            patch=0
+          else
+            version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+          fi
+
+          case "$BUMP" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            *)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          next_tag="v${major}.${minor}.${patch}"
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            exit 1
+          fi
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -a "$TAG" -m "Main build $TAG"
+          git push origin "$TAG"
