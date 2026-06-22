@@ -85,5 +85,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           echo "Adding Tag $TAG"
-#          git tag -a "$TAG" -m "Feature build $TAG"
-#          git push origin "$TAG"
+          git tag -a "$TAG" -m "Feature build $TAG"
+          git push origin "$TAG"
