@@ -73,7 +73,7 @@ jobs:
               ;;
           esac
 
-          next_tag="v${major}.${minor}.${patch}"
+          next_tag="${major}.${minor}.${patch}"
           echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
