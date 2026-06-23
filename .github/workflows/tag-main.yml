@@ -22,6 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check tag pusher
+        id: check_tag_pusher
+        run: |
+          echo "Actor: ${{ github.actor }}"
+          echo "Sender: ${{ github.event.sender.login }}"
+          echo "Pusher: ${{ github.event.pusher.name }}"§
+          echo "Pusher email: ${{ github.event.pusher.email }}"
+
       - name: Determine bump type
         id: bump
         env:
