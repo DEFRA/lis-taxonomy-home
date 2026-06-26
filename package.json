@@ -1,0 +1,13 @@
+{
+  "name": "@livestock/taxonomy-home",
+  "version": "0.1.0",
+  "description": "Home shared package for livestock taxonomy flows.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
