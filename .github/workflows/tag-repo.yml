@@ -84,6 +84,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --force --tags
+          git fetch --force origin main
 
           latest_main_tag=$(git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
 
@@ -108,14 +109,8 @@ jobs:
           base_version="${major}.${minor}.${patch}"
 
           if [[ "$EVENT_NAME" == "push" ]]; then
-            latest_branch_tag=$(git tag --merged HEAD --sort=-v:refname | grep -E "^${base_version}-${STORY_ID}-alpha\.[0-9]+$" | head -n1 || true)
-
-            if [ -z "$latest_branch_tag" ]; then
-              depth=1
-            else
-              depth="${latest_branch_tag##*.}"
-              depth=$((depth + 1))
-            fi
+            merge_base=$(git merge-base HEAD origin/main)
+            depth=$(git rev-list --count "${merge_base}..HEAD")
 
             next_tag="${base_version}-${STORY_ID}-alpha.${depth}"
             message="Repository branch build ${next_tag} from ${BRANCH_NAME}"
