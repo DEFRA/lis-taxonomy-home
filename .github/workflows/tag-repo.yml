@@ -85,23 +85,17 @@ jobs:
           set -euo pipefail
           git fetch --force --tags
 
-          latest_main_tag=$(git tag --sort=-v:refname | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+          latest_main_tag=$(git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
 
           if [ -z "$latest_main_tag" ]; then
             major=0
             minor=0
             patch=0
           else
-            version="${latest_main_tag#v}"
-            IFS='.' read -r major minor patch <<< "$version"
+            IFS='.' read -r major minor patch <<< "$latest_main_tag"
           fi
 
           case "$BUMP_TYPE" in
-            major)
-              major=$((major + 1))
-              minor=0
-              patch=0
-              ;;
             minor)
               minor=$((minor + 1))
               patch=0
@@ -111,18 +105,24 @@ jobs:
               ;;
           esac
 
-          prerelease_prefix="${major}.${minor}.${patch}-${STORY_ID}-alpha."
-          latest_story_tag=$(git tag --sort=-v:refname | grep -E "^${major}\.${minor}\.${patch}-${STORY_ID}-alpha\.[0-9]+$" | head -n1 || true)
+          base_version="${major}.${minor}.${patch}"
 
-          if [ -z "$latest_story_tag" ]; then
-            prerelease_number=1
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            latest_branch_tag=$(git tag --merged HEAD --sort=-v:refname | grep -E "^${base_version}-${STORY_ID}-alpha\.[0-9]+$" | head -n1 || true)
+
+            if [ -z "$latest_branch_tag" ]; then
+              depth=1
+            else
+              depth="${latest_branch_tag##*.}"
+              depth=$((depth + 1))
+            fi
+
+            next_tag="${base_version}-${STORY_ID}-alpha.${depth}"
+            message="Repository branch build ${next_tag} from ${BRANCH_NAME}"
           else
-            prerelease_number="${latest_story_tag##*.}"
-            prerelease_number=$((prerelease_number + 1))
+            next_tag="${base_version}"
+            message="Repository release ${next_tag} from ${BRANCH_NAME}"
           fi
-
-          next_tag="${prerelease_prefix}${prerelease_number}"
-          message="Repository build ${next_tag} for ${BRANCH_NAME} via ${EVENT_NAME}"
 
           echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
           echo "message=$message" >> "$GITHUB_OUTPUT"
