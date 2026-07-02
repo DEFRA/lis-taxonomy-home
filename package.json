@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "dependencies": {
+    "convict": "6.2.5",
+    "convict-format-with-validator": "6.2.0"
+  },
   "engines": {
     "node": ">=24"
   }
