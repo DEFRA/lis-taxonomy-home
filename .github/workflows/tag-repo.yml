@@ -1,9 +1,12 @@
 #
-# tag-repo.yml
-# This workflow tags feature and hotfix builds for either branch pushes
-# or merged pull requests from those branches.
+# tag-repo
 #
-name: tag-repo.yml
+# This workflow is used to apply tags to branches pushed to or merged into the repository.
+# - main will be tagged with the latest version number.
+# - feature/LREG-* and hotfix/LREG-* branches will be tagged with a prerelease version number
+#   including the story from the branch name.
+#
+name: tag-repo
 on:
   workflow_dispatch:
   pull_request:

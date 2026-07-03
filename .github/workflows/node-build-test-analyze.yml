@@ -1,0 +1,80 @@
+#
+# node-build-test-analyze
+#
+# This workflow is used to perform various checks and validations on code changes.
+# This will
+# - run the optional "build:frontend" task
+# - run the required "format:check" task
+# - run the required "lint" task
+# - run the required "test" task
+# - validate the Dockfile (if available) is correct and builds a container image
+# - call sonarcloud to validate the code quality
+#
+name: node-build-test-cover
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  push:
+    branches:
+      - feature/LREG-*
+      - hotfix/LREG-*
+
+jobs:
+  validator:
+    name: Run Pull Request Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Test code and Create Test Coverage Reports
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: |
+          run_command() {
+            local script_name=$1
+            local fail_if_missing=${2:-true}
+
+            if jq -e ".scripts[\"$script_name\"]" package.json > /dev/null; then
+              echo "🚀 Running: npm run $script_name"
+              npm run "$script_name"
+            else
+              if [ "$fail_if_missing" == "true" ]; then
+                echo "❌ '$script_name' missing. Halting workflow."
+                exit 1
+              else
+                echo "⚠️ '$script_name' missing but not required. Continuing build."
+              fi
+            fi
+          }
+
+          npm ci
+          run_command "build:frontend" "false"
+          run_command "format:check"
+          run_command "lint"
+          run_command "test"
+
+      - name: Test Docker Image Build
+        run: |
+          if [ -f "Dockerfile" ]; then
+            set +e
+            echo "🐳 Dockerfile found. Building image..."
+            docker build --no-cache --tag test-build-container .
+            exit $?
+          else
+            echo "⏭️ No Dockerfile found. Skipping build."
+          fi
+
+      - name: SonarQube Scan
+        if: github.actor != 'dependabot[bot]'
+        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
