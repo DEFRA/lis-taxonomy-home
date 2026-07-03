@@ -7,9 +7,35 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "scripts": {
+    "pretty": "npm run format",
+    "pretty:check": "npm run format:check",
+    "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json,config.js,test.js}\"",
+    "git:pre-commit-hook": "npm run format:check && npm run lint",
+    "lint": "run-s lint:js lint:scss",
+    "lint:js": "eslint .",
+    "lint:js:fix": "eslint . --fix",
+    "lint:scss": "stylelint \"src/**/*.scss\" --allow-empty-input --cache --cache-location .cache/stylelint --cache-strategy content --color --ignore-path .gitignore",
+    "setup:husky": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module",
+    "test": "npm run test:coverage",
+    "test:unit": "node --test",
+    "test:coverage": "c8 --reporter=text --reporter=lcov --exclude=src/config/** --exclude=src/**/*.test.js node --test"
+  },
   "dependencies": {
     "convict": "6.2.5",
     "convict-format-with-validator": "6.2.0"
+  },
+  "devDependencies": {
+    "c8": "10.1.3",
+    "eslint": "9.39.2",
+    "eslint-plugin-sonarjs": "4.0.3",
+    "husky": "9.1.7",
+    "neostandard": "0.13.0",
+    "npm-run-all": "4.1.5",
+    "prettier": "3.8.2",
+    "stylelint": "16.26.1",
+    "stylelint-config-gds": "2.0.0"
   },
   "engines": {
     "node": ">=24"
