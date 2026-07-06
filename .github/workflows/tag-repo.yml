@@ -51,6 +51,6 @@ jobs:
 
       - name: Calculate and push tag
         id: calc-and-stamp
-        uses: actions/cake@v3
+        uses: cake-build/cake-action@v3
         with:
-          script: ./.github/workflows/tag-repo.cake
+          script-path: ./.github/workflows/tag-repo.cake
