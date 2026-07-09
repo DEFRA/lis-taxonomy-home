@@ -1,8 +1,10 @@
+/** @import { Request } from '@hapi/hapi' */
 import { taxonomy } from './taxonomy.js'
 import { config } from './config/config.js'
 
 const PERMISSION_PREFIX = 'lis-perm-'
 const ACCESS_LEVELS = new Set(['read', 'write', 'admin'])
+const MIN_PERMISSION_PARTS = 2
 
 function buildHistoryRows(snapshot) {
   let counter = 1
@@ -13,13 +15,18 @@ function buildHistoryRows(snapshot) {
   for (const holding of snapshot.holdings) {
     const holdingSummary = {
       name: holding.group_name,
-      cphs: holding.cphs.map((cph) => ({
-        id: cph.cph,
-        latitude: cph.latitude,
-        longitude: cph.longitude,
-        count: cph.animals.length,
-        mapPin: `pin-l-${counter++}+b44656(${cph.longitude},${cph.latitude})`
-      }))
+      cphs: holding.cphs.map((cph) => {
+        const pinIndex = counter
+        counter += 1
+
+        return {
+          id: cph.cph,
+          latitude: cph.latitude,
+          longitude: cph.longitude,
+          count: cph.animals.length,
+          mapPin: `pin-l-${pinIndex}+b44656(${cph.longitude},${cph.latitude})`
+        }
+      })
     }
 
     const pins = holdingSummary.cphs.map((cph) => cph.mapPin).join(',')
@@ -39,6 +46,14 @@ function buildHistoryRows(snapshot) {
   return results
 }
 
+/**
+ * @param {Request} request
+ * @param {string} speciesId
+ * @param {string} species
+ * @param {Function} livestockService
+ * @param {Function} holdingService
+ * @returns {Promise<object>}
+ */
 export async function historySnapshot(
   request,
   speciesId,
@@ -59,7 +74,7 @@ export async function historySnapshot(
         .map((cph) => ({
           ...cph,
           allowedSpecies: cph.allowedSpecies.filter(
-            (species) => species === speciesId
+            (allowedSpeciesId) => allowedSpeciesId === speciesId
           )
         }))
         .filter((cph) => cph.allowedSpecies.length > 0)
@@ -82,8 +97,12 @@ export async function historySnapshot(
   return snapshot
 }
 
+function hasPermissionButtons(permissions) {
+  return Array.isArray(permissions) && Boolean(taxonomy.permissionButtons)
+}
+
 function getSpeciesPermissionButtons(permissions, { speciesId, speciesSlug }) {
-  if (!Array.isArray(permissions) || !taxonomy.permissionButtons) {
+  if (!hasPermissionButtons(permissions)) {
     return []
   }
 
@@ -139,7 +158,7 @@ function parsePermission(permission) {
     .split('-')
     .filter(Boolean)
 
-  if (parts.length < 2 || !ACCESS_LEVELS.has(parts.at(-1))) {
+  if (parts.length < MIN_PERMISSION_PARTS || !ACCESS_LEVELS.has(parts.at(-1))) {
     return null
   }
 
