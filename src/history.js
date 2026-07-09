@@ -4,7 +4,7 @@ import { config } from './config/config.js'
 const PERMISSION_PREFIX = 'lis-perm-'
 const ACCESS_LEVELS = new Set(['read', 'write', 'admin'])
 
-function buildHistoryRows(history) {
+function buildHistoryRows(snapshot) {
   let counter = 1
   const mapboxApiKey = config.get('mapbox.apiKey')
   const results = {}
@@ -46,6 +46,7 @@ export async function historySnapshot(
   livestockService,
   holdingService
 ) {
+  const user = await livestockService(request?.app?.hubAuth)
   const filteredPermissions = getSpeciesPermissionButtons(user.permissions, {
     speciesId,
     speciesSlug: species
@@ -77,12 +78,12 @@ export async function historySnapshot(
     permissions: filteredPermissions,
     holdings: filteredHoldings
   }
-  snapshot.summary = buildSummaryRows(snapshot)
+  snapshot.summary = buildHistoryRows(snapshot)
   return snapshot
 }
 
 function getSpeciesPermissionButtons(permissions, { speciesId, speciesSlug }) {
-  if (!Array.isArray(permissions)) {
+  if (!Array.isArray(permissions) || !taxonomy.permissionButtons) {
     return []
   }
 
