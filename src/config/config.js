@@ -7,6 +7,7 @@ import convictFormatWithValidator from 'convict-format-with-validator'
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const fourHoursMs = 14400000
+const oneDayMs = 86400000
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -58,7 +59,7 @@ export const config = convict({
   staticCacheTimeout: {
     doc: 'Cache timeout for static assets in milliseconds',
     format: Number,
-    default: 24 * 60 * 60 * 1000,
+    default: oneDayMs,
     env: 'STATIC_CACHE_TIMEOUT'
   },
   isProduction: {
