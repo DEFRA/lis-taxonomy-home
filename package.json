@@ -1,24 +1,39 @@
 {
   "name": "@livestock/taxonomy-home",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Home shared package for livestock taxonomy flows.",
-  "type": "module",
   "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DEFRA/lis-taxonomy-home.git"
+  },
   "exports": {
     ".": "./src/index.js"
   },
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.js\" \"**/*.{js,cjs,md,json}\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json}\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "if [ ! \"$CI\" ]; then husky; fi",
+    "security-audit": "audit-ci",
+    "git:pre-commit-hook": "npm run security-audit && npm run format:check && npm run lint"
+  },
+  "author": "Defra DDTS",
+  "license": "OGL-UK-3.0",
   "dependencies": {
     "convict": "6.2.5",
     "convict-format-with-validator": "6.2.0"
   },
-  "engines": {
-    "node": ">=24"
-  },
   "devDependencies": {
-    "@defra/lis-infra-eslint-config": "0.0.1",
-    "eslint": "^9.0.0"
-  },
-  "scripts": {
-    "lint": "eslint ."
+    "@defra/lis-infra-eslint-config": "0.1.0-lreg-25.alpha.7",
+    "audit-ci": "^7.1.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.4"
   }
 }

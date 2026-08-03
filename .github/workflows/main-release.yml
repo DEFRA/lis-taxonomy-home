@@ -1,0 +1,80 @@
+name: 'Main Release'
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+concurrency:
+  group: main-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  verify-release:
+    name: 'Verify Merged and Approved'
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR approval
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = await github.graphql(
+              `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    reviewDecision
+                  }
+                }
+              }`,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: context.issue.number
+              }
+            )
+
+            const decision = result.repository.pullRequest.reviewDecision
+            if (decision !== 'APPROVED') {
+              core.setFailed(`PR review decision is '${decision}', not 'APPROVED'.`)
+            }
+
+  get-version:
+    name: 'Calculate Stable Version'
+    needs: verify-release
+    uses: ./.github/workflows/version.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      release-type: stable
+
+  validate:
+    name: 'Validate Merged Commit'
+    needs: get-version
+    uses: ./.github/workflows/validate.yml
+    with:
+      version: ${{ needs.get-version.outputs.version }}
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+  sonar-analysis:
+    name: 'Sonar Analysis'
+    needs: [get-version, validate]
+    uses: ./.github/workflows/sonar.yml
+    with:
+      version: ${{ needs.get-version.outputs.version }}
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+    secrets: inherit
+
+  create-tag:
+    name: 'Tag Main'
+    needs: [get-version, validate, sonar-analysis]
+    if: needs.sonar-analysis.outputs.quality-gate-status == 'PASSED'
+    uses: ./.github/workflows/tag.yml
+    with:
+      version: ${{ needs.get-version.outputs.version }}
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+    secrets: inherit
