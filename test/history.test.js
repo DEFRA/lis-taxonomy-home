@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { historySnapshot } from './history.js'
-import { taxonomy } from './taxonomy.js'
+import { historySnapshot } from '../src/history.js'
+import { taxonomy } from '../src/taxonomy.js'
 
 describe('historySnapshot', () => {
   it('filters holdings by species and enriches matching CPHs', async () => {

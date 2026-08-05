@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import * as packageExports from './index.js'
-import { taxonomy } from './taxonomy.js'
+import * as packageExports from '../src/index.js'
+import { taxonomy } from '../src/taxonomy.js'
 
 describe('package exports', () => {
   it('exports the home taxonomy definition', () => {
