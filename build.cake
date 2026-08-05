@@ -1,11 +1,30 @@
 #nullable enable
-using System.Collections.Generic;
 #load "version.cake"
 
 var target = Argument("target", "Default");
 var packOutputDir = Argument("output_dir", EnvironmentVariable("OUTPUT_DIR") ?? "artifacts");
 var version = Argument("package_version", EnvironmentVariable("PACKAGE_VERSION") ?? "");
 var stagingDir = "./.cake/package";
+
+Action createPackage = () =>
+{
+    EnsureDirectoryExists(stagingDir);
+    EnsureDirectoryExists(packOutputDir);
+
+    CopyFileToDirectory("./package.json", stagingDir);
+    CopyFileToDirectory("./package-lock.json", stagingDir);
+    if (FileExists("./README.md"))
+    {
+        CopyFileToDirectory("./README.md", stagingDir);
+    }
+
+    CopyDirectory("./src", $"{stagingDir}/src");
+
+    RunNpm(
+        $"version {version} --allow-same-version --no-git-tag-version " +
+        $"--ignore-scripts --prefix \"{stagingDir}\"");
+    RunNpm($"pack \"{stagingDir}\" --pack-destination \"{MakeAbsolute(Directory(packOutputDir))}\"");
+};
 
 Task("Clean")
     .Description("Removes generated Node package output")
@@ -36,7 +55,7 @@ Task("Install")
 Task("SecurityAudit")
     .IsDependentOn("Install")
     .Description("Audits dependencies")
-    .Does(() => RunNpm("audit --audit-level=critical"));
+    .Does(() => RunNpm("run security-audit"));
 
 Task("Format")
     .IsDependentOn("SecurityAudit")
@@ -50,8 +69,8 @@ Task("Lint")
 
 Task("Test")
     .IsDependentOn("Lint")
-    .Description("Runs Node's built-in test runner")
-    .Does(() => RunNode("--test"));
+    .Description("Runs the Vitest test suite")
+    .Does(() => RunNpm("test"));
 
 Task("Build")
     .IsDependentOn("Test")
@@ -66,29 +85,15 @@ Task("Build")
 
 Task("Pack")
     .IsDependentOn("Build")
-    .Description("Stages and creates a versioned npm package archive")
-    .Does(() =>
-    {
-        EnsureDirectoryExists(stagingDir);
-        EnsureDirectoryExists(packOutputDir);
+    .Description("Validates and creates a versioned npm package archive")
+    .Does(createPackage);
 
-        CopyFileToDirectory("./package.json", stagingDir);
-        CopyFileToDirectory("./package-lock.json", stagingDir);
-        if (FileExists("./README.md"))
-        {
-            CopyFileToDirectory("./README.md", stagingDir);
-        }
-
-        CopyDirectory("./src", $"{stagingDir}/src");
-
-        RunNpm(
-            $"version {version} --allow-same-version --no-git-tag-version " +
-            $"--ignore-scripts --prefix \"{stagingDir}\"");
-        RunNpm($"pack \"{stagingDir}\" --pack-destination \"{MakeAbsolute(Directory(packOutputDir))}\"");
-    });
+Task("PackOnly")
+    .IsDependentOn("Version")
+    .Description("Creates a versioned npm package archive from previously validated source")
+    .Does(createPackage);
 
 Task("Default")
     .IsDependentOn("Pack");
 
 RunTarget(target);
-

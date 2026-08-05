@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   validate-release:
@@ -63,7 +62,7 @@ jobs:
           echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
 
   build-pack:
-    name: 'Build, Test and Pack Tag'
+    name: 'Pack Tagged Source'
     needs: validate-release
     uses: ./.github/workflows/build-pack.yml
     with:

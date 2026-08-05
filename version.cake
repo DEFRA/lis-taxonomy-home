@@ -1,7 +1,6 @@
 #nullable enable
 #load "base.cake"
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -10,14 +9,6 @@ var featureBranchPattern = new Regex(@"^feature/(lreg-[0-9]+)-.+$");
 var stableTagPattern = new Regex(@"^[0-9]+\.[0-9]+\.[0-9]+$");
 var versionPattern = new Regex(
     @"^[0-9]+\.[0-9]+\.[0-9]+(?:-lreg-[0-9]+\.alpha\.[1-9][0-9]*)?$");
-
-bool IsPrereleaseBranch(string branchName)
-{
-    var hotfixMatch = hotfixBranchPattern.Match(branchName);
-    var featureMatch = featureBranchPattern.Match(branchName);
-
-    return (hotfixMatch.Success || featureMatch.Success);
-}
 
 string ResolveRepositoryBranchName(string? branchName = null)
 {
@@ -114,8 +105,7 @@ string CalculateVersion(string? branchName = null, bool stable = false)
 
         if (!int.TryParse(depthValue, out depth) || depth < 1)
         {
-            throw new Exception(
-                $"Unable to calculate a positive commit height for branch '{resolvedBranchName}'.");
+            depth = 1;
         }
 
         version = $"{baseVersion}-{storyId}.alpha.{depth}";

@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 
 IReadOnlyList<string> GetCommandOutput(string fileName, string arguments)
@@ -66,32 +65,6 @@ void RunNpx(string arguments)
 void RunGit(string arguments)
 {
     RunCommand("git", arguments);
-}
-
-bool CommandSucceeds(string fileName, string arguments)
-{
-    var exitCode = StartProcess(
-        fileName,
-        new ProcessSettings
-        {
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        });
-
-    return exitCode == 0;
-}
-
-string RequireEnvironmentVariable(string name)
-{
-    var value = EnvironmentVariable(name);
-
-    if (string.IsNullOrWhiteSpace(value))
-    {
-        throw new Exception($"Environment variable '{name}' is required.");
-    }
-
-    return value;
 }
 
 IReadOnlyList<string> GetGitOutput(string arguments) => GetCommandOutput("git", arguments);

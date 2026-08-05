@@ -35,45 +35,45 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Run tests, coverage and SonarCloud
-        uses: cake-build/cake-action@v3
-        env:
-          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-          PRODUCT_NAME: ${{ vars.PRODUCT_NAME }}
-          PACKAGE_VERSION: ${{ inputs.version }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          script-path: ./sonar.cake
-          target: Sonar
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Locate SonarCloud report task file
-        id: report_task
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Verify LCOV coverage
         run: |
-          REPORT_FILE=$(find . -name "report-task.txt" -print -quit)
-          if [ -z "$REPORT_FILE" ]; then
-            echo "report-task.txt not found" >&2
+          if [[ ! -s coverage/lcov.info ]]; then
+            echo "coverage/lcov.info was not created or is empty." >&2
             exit 1
           fi
-          echo "Found report task file: $REPORT_FILE"
-          echo "path=$REPORT_FILE" >> "$GITHUB_OUTPUT"
+
+          if ! grep -q '^SF:' coverage/lcov.info; then
+            echo "coverage/lcov.info contains no source records." >&2
+            exit 1
+          fi
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f #v8.2.1
+        with:
+          args: >-
+            -Dsonar.projectVersion=${{ inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.LIS_SONAR_TOKEN }}
 
       - name: SonarCloud Quality Gate check
         id: quality_gate
-        uses: SonarSource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b #v1.20
         timeout-minutes: 5
         with:
-          scanMetadataReportFile: ${{ steps.report_task.outputs.path }}
+          scanMetadataReportFile: .scannerwork/report-task.txt
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.LIS_SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io

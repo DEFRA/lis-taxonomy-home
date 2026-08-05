@@ -1,5 +1,5 @@
 {
-  "name": "@livestock/taxonomy-home",
+  "name": "@defra/taxonomy-home",
   "version": "0.0.1",
   "description": "Home shared package for livestock taxonomy flows.",
   "main": "src/index.js",
@@ -10,6 +10,9 @@
   "exports": {
     ".": "./src/index.js"
   },
+  "files": [
+    "src"
+  ],
   "type": "module",
   "engines": {
     "node": ">=24"
@@ -19,21 +22,31 @@
     "format:check": "prettier --check \"src/**/*.js\" \"**/*.{js,cjs,md,json}\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepare": "if [ ! \"$CI\" ]; then husky; fi",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.provider=istanbul --coverage.reporter=text --coverage.reporter=lcov --coverage.include=\"src/**/*.js\"",
+    "prepare": "if [ \"$npm_command\" = \"install\" ] && [ -z \"$CI\" ] && command -v husky >/dev/null 2>&1; then husky; fi",
     "security-audit": "audit-ci",
     "git:pre-commit-hook": "npm run security-audit && npm run format:check && npm run lint"
   },
   "author": "Defra DDTS",
   "license": "OGL-UK-3.0",
   "dependencies": {
+    "eslint-plugin-jsdoc": "^63.0.8",
+    "eslint-plugin-sonarjs": "^4.1.0",
+    "neostandard": "0.13.0",
     "convict": "6.2.5",
     "convict-format-with-validator": "6.2.0"
   },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  },
   "devDependencies": {
-    "@defra/lis-infra-eslint-config": "0.1.0-lreg-25.alpha.7",
+    "@defra/lis-infra-eslint-config": "^0.6.0",
+    "@vitest/coverage-istanbul": "^4.1.10",
     "audit-ci": "^7.1.0",
     "eslint": "^9.0.0",
     "husky": "^9.1.7",
-    "prettier": "^3.8.4"
+    "prettier": "^3.9.6",
+    "vitest": "^4.1.10"
   }
 }

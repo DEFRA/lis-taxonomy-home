@@ -13,3 +13,4 @@ tsconfig.tsbuildinfo
 
 package-lock.json
 .npmrc
+.cake/
