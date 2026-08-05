@@ -38,11 +38,7 @@ IReadOnlyList<string> GetCommandOutput(string fileName, string arguments)
 
 void RunCommand(string fileName, string arguments)
 {
-    var results = GetCommandOutput(fileName, arguments);
-//     foreach(var item in results)
-//     {
-//       Information(item);
-//     }
+    GetCommandOutput(fileName, arguments);
 }
 
 string NpmExecutable => IsRunningOnWindows() ? "npm.cmd" : "npm";
