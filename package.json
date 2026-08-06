@@ -1,5 +1,5 @@
 {
-  "name": "@defra/taxonomy-home",
+  "name": "@defra/lis-taxonomy-home",
   "version": "0.0.1",
   "description": "Home shared package for livestock taxonomy flows.",
   "main": "src/index.js",
