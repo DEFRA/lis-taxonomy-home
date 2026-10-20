@@ -31,14 +31,8 @@
   "author": "Defra DDTS",
   "license": "OGL-UK-3.0",
   "dependencies": {
-    "eslint-plugin-jsdoc": "^63.0.8",
-    "eslint-plugin-sonarjs": "^4.1.0",
-    "neostandard": "0.13.0",
     "convict": "6.2.5",
     "convict-format-with-validator": "6.2.0"
-  },
-  "peerDependencies": {
-    "eslint": "^9.0.0"
   },
   "devDependencies": {
     "@defra/lis-infra-eslint-config": "^0.6.0",
