@@ -30,10 +30,6 @@
   },
   "author": "Defra DDTS",
   "license": "OGL-UK-3.0",
-  "dependencies": {
-    "convict": "6.2.5",
-    "convict-format-with-validator": "6.2.0"
-  },
   "devDependencies": {
     "@defra/lis-infra-eslint-config": "^0.6.0",
     "@vitest/coverage-istanbul": "^4.1.10",
