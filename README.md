@@ -37,15 +37,15 @@ import { taxonomy } from '@defra/lis-taxonomy-home'
 // }
 ```
 
-[lis-apps-sheep-home](https://github.com/DEFRA/lis-apps-sheep-home) uses `taxonomy.id` together
-with the species `id` from `@defra/lis-species-sheep` to build the microsite path:
+[lis-apps-sheep-home](https://github.com/DEFRA/lis-apps-sheep-home) uses `taxonomy.id` together with the species `id` from
+`@defra/lis-species-sheep` to build the microsite path:
 
 ```js
 import { buildMicrositePath } from '@defra/lis-infra-ui-services'
 import { taxonomy } from '@defra/lis-taxonomy-home'
 import { species } from '@defra/lis-species-sheep'
 
-const homePath = buildMicrositePath(taxonomy.id, species.id)
+const path = buildMicrositePath(taxonomy.id, species.id)
 ```
 
 ## Prerequisites
@@ -55,14 +55,10 @@ const homePath = buildMicrositePath(taxonomy.id, species.id)
 
 ## Setup
 
-### Development
-
 ```bash
 nvm use
 npm install
 ```
-
-### Test
 
 There are no tools to install beyond `npm install`. Tests use [Vitest](https://vitest.dev/).
 
@@ -73,8 +69,8 @@ publishing, link the local copy into the lis-dev stack:
 
 ```bash
 cd lis-dev
-.bin/sideload link taxonomy/home # every installed copy now points at this repo
-.bin/sideload up sheep-home       # optional: run a consumer locally with hot reload
+.bin/sideload link taxonomy/home   # every installed copy now points at this repo
+.bin/sideload up sheep-home  # optional: run a consumer locally with hot reload
 .bin/sideload unlink taxonomy/home # when done
 ```
 
@@ -85,19 +81,24 @@ npm test                 # unit tests
 npm run test:coverage    # with coverage
 npm run lint             # ESLint
 npm run format:check     # Prettier
+npm run security-audit   # audit-ci
 ```
 
 Before releasing a change, also run the tests of each consuming repo against the linked package.
 
 ## Pipelines
 
-Build, versioning and publishing run in GitHub Actions (`.github/workflows`) using Cake scripts (`*.cake`):
+The workflows in `.github/workflows` call the shared composite actions in
+[lis-github-actions](https://github.com/DEFRA/lis-github-actions), pinned by commit SHA. Every run
+calculates the version from git tags (SemVer), then runs **build, test and pack** (security
+audit, format check, lint, tests, `npm pack`) alongside a **Sonar analysis**.
 
-- **Pull request to `main`**: validate (format, lint, test), Sonar analysis, version check
-- **Push to a `feature/` or `hotfix/` branch**: prerelease version and tag
-- **Merge to `main`**: release tag, then publish to [npm](https://www.npmjs.com/package/@defra/lis-taxonomy-home)
+- **Pull request to `main`** (`pull-request.yml`): the checks above. The `Pull Request Validation` job is the required check.
+- **Push to a `feature/` or `hotfix/` branch** (`prerelease.yml`): the checks above, then a prerelease tag such as `0.2.0-LREG-123-alpha.1.1` if the Sonar quality gate passes.
+- **Merge to `main`** (`release.yml`): the checks above on the merge commit, then a release tag if the quality gate passes.
+- **Tag push** (`publish.yml`): publishes the package built for that tag to [npm](https://www.npmjs.com/package/@defra/lis-taxonomy-home) with trusted publishing, under the `alpha` dist-tag for prereleases and `latest` for releases.
 
-Versions come from git tags (SemVer). After a merge, wait for the publish job to finish before bumping the package in consuming repos.
+After a merge, wait for the publish job to finish before bumping the package in consuming repos.
 
 ## Branching policy
 
